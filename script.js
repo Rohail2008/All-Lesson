@@ -98,6 +98,7 @@ function loadQuiz() {
 }
 
 function fetchQuizData(lessonNum) {
+  // Correct file path for JSON files named lesson1.json, lesson2.json, etc.
   fetch(`lessons/lesson${lessonNum.slice(1)}.json`)
     .then(res => res.json())
     .then(data => {
@@ -109,7 +110,7 @@ function fetchQuizData(lessonNum) {
       currentLesson = lessonCodes[lessonNum].take;
       displayQuiz();
     })
-    .catch(() => alert("Lesson not found."));
+    .catch(() => alert("Lesson not found. Ensure the JSON files are correctly named (lesson1.json, lesson2.json, etc.)."));
 }
 
 function displayQuiz() {
