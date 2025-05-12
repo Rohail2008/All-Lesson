@@ -67,6 +67,7 @@ let lessonCodes = {
   }
 };
 
+// Function to load quiz based on the entered code
 function loadQuiz() {
   const code = document.getElementById("lesson-code").value.trim();
   if (!code) return alert("Please enter a lesson code.");
@@ -97,12 +98,18 @@ function loadQuiz() {
   }
 }
 
+// Function to fetch quiz data based on lesson number
 function fetchQuizData(lessonNum) {
-  // Correct file path for JSON files named lesson1.json, lesson2.json, etc.
-  fetch(`lessons/lesson${lessonNum.slice(1)}.json`)
-    .then(res => res.json())
+  // Correct path for JSON files inside the 'quiz' folder (e.g., quiz/lesson1.json)
+  fetch(`quiz/lesson${lessonNum.slice(1)}.json`)
+    .then(res => {
+      if (!res.ok) {
+        throw new Error("Lesson not found");
+      }
+      return res.json();
+    })
     .then(data => {
-      // Check if the JSON file contains a 'code' property and verify the code against it
+      // Ensure the code matches
       if (!data.code || data.code !== lessonCodes[lessonNum].take) {
         alert("Incorrect take code for this lesson.");
         return;
@@ -111,9 +118,10 @@ function fetchQuizData(lessonNum) {
       currentLesson = lessonCodes[lessonNum].take;
       displayQuiz();
     })
-    .catch(() => alert("Lesson not found. Ensure the JSON files are correctly named (lesson1.json, lesson2.json, etc.)."));
+    .catch(error => alert("Lesson not found. Ensure the JSON files are correctly named (lesson1.json, lesson2.json, etc.)."));
 }
 
+// Function to display the quiz based on the data
 function displayQuiz() {
   const container = document.getElementById("quiz-container");
   container.innerHTML = "";
