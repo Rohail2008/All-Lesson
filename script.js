@@ -1,7 +1,7 @@
 let quizData = [];
-let currentQuestionIndex = 0;
+let currentQuestionIndex = 0; // Changed from currentQuestion to currentQuestionIndex
 let score = 0;
-let currentLessonKey = "";
+let currentLessonKey = ""; // Changed from currentLesson to currentLessonKey
 
 const lessonCodes = {
     "L1": { take: "L1TAKE", retake: "L1RETAKE" },
@@ -17,9 +17,9 @@ const lessonCodes = {
     "L11": { take: "L11TAKE", retake: "L11RETAKE" },
     "L12": { take: "L12TAKE", retake: "L12RETAKE" },
     "L13": { take: "L13TAKE", retake: "L13RETAKE" },
-    "L14": { take: "L14TAKE", retake: "L14RETAKE" },
-    "L15": { take: "L15TAKE", retake: "L15RETAKE" },
-    "L16": { take: "L16TAKE", retake: "L16RETAKE" }
+    "L14": { take: "L14RETAKE", retake: "L14RETAKE" },
+    "L15": { take: "L15RETAKE", retake: "L15RETAKE" },
+    "L16": { take: "L16RETAKE", retake: "L16RETAKE" }
 };
 
 // DOM Elements
@@ -30,7 +30,7 @@ const scorePage = document.getElementById("score-page");
 const questionElement = document.getElementById("question");
 const optionsElement = document.getElementById("options");
 const nextButton = document.getElementById("next-btn");
-const scoreDisplayElement = document.getElementById("score");
+const scoreDisplayElement = document.getElementById("score"); // Changed from scoreElement to scoreDisplayElement
 const codeInputElement = document.getElementById("code-input");
 const submitCodeButton = document.getElementById("submit-code-btn");
 const retakeQuizButton = document.getElementById("retake-quiz-btn");
@@ -67,9 +67,13 @@ function showPage(name) {
 // --- Quiz Logic Functions ---
 
 function loadQuiz(lessonKey, code) {
-    fetch(`${lessonKey}.json`)
+    const url = `${lessonKey}.json`; // Simplified URL (assuming files are in the same directory)
+    console.log("Fetching:", url); // Debugging log
+
+    fetch(url)
         .then(res => res.json())
         .then(data => {
+            console.log("Fetched Data:", data); // Debugging log
             if (data.code !== code) {
                 alert("Code does not match lesson file.");
                 return;
@@ -90,8 +94,8 @@ function loadQuiz(lessonKey, code) {
 function showQuestion() {
     if (!isValidQuestionState()) return;
 
-    const q = quizData[currentQuestionIndex];
-    questionElement.textContent = `Q${currentQuestionIndex + 1}: ${q.question}`;
+    const q = quizData[currentQuestionIndex]; // Changed from currentQuestion to currentQuestionIndex
+    questionElement.textContent = `Q${currentQuestionIndex + 1}: ${q.question}`; // Changed from currentQuestion to currentQuestionIndex
     optionsElement.innerHTML = "";
     nextButton.disabled = true; // Disable until an option is selected or input is given
 
@@ -125,7 +129,7 @@ function showQuestion() {
 function checkAnswer() {
     if (!isValidQuestionState()) return;
 
-    const q = quizData[currentQuestionIndex];
+    const q = quizData[currentQuestionIndex]; // Changed from currentQuestion to currentQuestionIndex
     const userAnswer = getUserAnswer();
     const correctAnswer = getCorrectAnswer(q);
     let isCorrect = false;
@@ -159,17 +163,16 @@ function provideFeedback(isCorrect, correctAnswer) {
     questionElement.innerHTML += `<br>${feedback}`; // Append feedback to question
 }
 
-
 function showScore() {
-    localStorage.setItem(currentLessonKey, "done");
-    scoreDisplayElement.textContent = `${score} / ${quizData.length}`;
+    localStorage.setItem(currentLessonKey, "done"); // Changed from currentLesson to currentLessonKey
+    scoreDisplayElement.textContent = `${score} / ${quizData.length}`; // Changed from scoreElement to scoreDisplayElement
     showPage("score");
 }
 
 // --- Helper/Utility Functions ---
 
 function isValidQuestionState() {
-    if (!quizData || quizData.length === 0 || currentQuestionIndex >= quizData.length) {
+    if (!quizData || quizData.length === 0 || currentQuestionIndex >= quizData.length) { // Changed from currentQuestion to currentQuestionIndex
         console.error("Invalid quiz data or question index");
         return false;
     }
@@ -177,7 +180,7 @@ function isValidQuestionState() {
 }
 
 function resetQuizState() {
-    currentQuestionIndex = 0;
+    currentQuestionIndex = 0; // Changed from currentQuestion to currentQuestionIndex
     score = 0;
     questionElement.innerHTML = ""; // Clear previous question and feedback
 }
@@ -250,7 +253,7 @@ function submitCode() {
         return;
     }
 
-    currentLessonKey = lessonKey;
+    currentLessonKey = lessonKey; // Changed from currentLesson to currentLessonKey
     loadQuiz(lessonKey, code);
 }
 
@@ -260,8 +263,8 @@ function nextQuestion() {
     nextButton.disabled = true; // Disable next button until the next question is displayed
 
     setTimeout(() => {
-        currentQuestionIndex++;
-        if (currentQuestionIndex < quizData.length) {
+        currentQuestionIndex++; // Changed from currentQuestion to currentQuestionIndex
+        if (currentQuestionIndex < quizData.length) { // Changed from currentQuestion to currentQuestionIndex
             showQuestion();
         } else {
             showScore();
