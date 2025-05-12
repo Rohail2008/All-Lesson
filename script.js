@@ -1,137 +1,169 @@
 let quizData = [];
-let currentLesson = "";
-let currentQuestionIndex = 0;
+let currentQuestion = 0;
 let score = 0;
+let currentLesson = "";
+let currentCodeType = ""; // "take" or "retake"
 
 const lessonCodes = {
   L1: { take: "L1TAKE", retake: "L1RETAKE" },
   L2: { take: "L2TAKE", retake: "L2RETAKE" },
-  // Add more lessons as needed
+  L3: { take: "L3TAKE", retake: "L3RETAKE" },
+  L4: { take: "L4TAKE", retake: "L4RETAKE" },
+  L5: { take: "L5TAKE", retake: "L5RETAKE" },
+  L6: { take: "L6TAKE", retake: "L6RETAKE" },
+  L7: { take: "L7TAKE", retake: "L7RETAKE" },
+  L8: { take: "L8TAKE", retake: "L8RETAKE" },
+  L9: { take: "L9TAKE", retake: "L9RETAKE" },
+  L10: { take: "L10TAKE", retake: "L10RETAKE" },
+  L11: { take: "L11TAKE", retake: "L11RETAKE" },
+  L12: { take: "L12TAKE", retake: "L12RETAKE" },
+  L13: { take: "L13TAKE", retake: "L13RETAKE" },
+  L14: { take: "L14TAKE", retake: "L14RETAKE" },
+  L15: { take: "L15TAKE", retake: "L15RETAKE" },
+  L16: { take: "L16TAKE", retake: "L16RETAKE" }
 };
 
-function showPage(pageId) {
-  document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
-  document.getElementById(pageId).classList.remove("hidden");
+// Page elements
+const pages = {
+  welcome: document.getElementById("welcome-page"),
+  quiz: document.getElementById("quiz-page"),
+  score: document.getElementById("score-page"),
+  code: document.getElementById("code-page")
+};
+
+const questionEl = document.getElementById("question");
+const optionsEl = document.getElementById("options");
+const scoreEl = document.getElementById("score");
+const errorMsg = document.getElementById("error-message");
+
+// Page navigation
+function showPage(name) {
+  Object.values(pages).forEach(p => p.style.display = "none");
+  pages[name].style.display = "block";
 }
 
+// Load quiz based on entered code
 function loadQuiz() {
-  const code = document.getElementById("lesson-code").value.trim();
-  const lessonKey = code.slice(0, 2).toUpperCase();
+  const inputCode = document.getElementById("code-input").value.trim().toUpperCase();
+  let matchedLesson = null;
 
-  if (!lessonCodes[lessonKey]) {
-    document.getElementById("error-message").textContent = "Invalid lesson code.";
-    return;
-  }
-
-  const local = localStorage.getItem(lessonKey);
-
-  if (local === "done") {
-    if (code === lessonCodes[lessonKey].retake) {
-      alert("Retake allowed.");
-    } else {
-      alert("Retake code required.");
-      return;
-    }
-  } else if (code !== lessonCodes[lessonKey].take) {
-    alert("Invalid take code.");
-    return;
-  }
-
-  fetch(`lesson${lessonKey.slice(1)}.json`)
-    .then(res => res.json())
-    .then(data => {
-      if (!data || !Array.isArray(data.questions)) {
-        alert("Invalid lesson file.");
+  for (const [lesson, codes] of Object.entries(lessonCodes)) {
+    if (inputCode === codes.take) {
+      matchedLesson = lesson;
+      currentCodeType = "take";
+      break;
+    } else if (inputCode === codes.retake) {
+      if (localStorage.getItem(lesson) === "done") {
+        matchedLesson = lesson;
+        currentCodeType = "retake";
+        break;
+      } else {
+        errorMsg.textContent = "You must complete the lesson before retaking.";
         return;
       }
+    }
+  }
+
+  if (!matchedLesson) {
+    errorMsg.textContent = "Invalid code. Please try again.";
+    return;
+  }
+
+  currentLesson = matchedLesson;
+  fetchQuiz(matchedLesson);
+}
+
+// Fetch JSON file for lesson
+function fetchQuiz(lesson) {
+  fetch(`lesson${lesson.slice(1)}.json`)
+    .then(res => res.json())
+    .then(data => {
       quizData = data.questions;
-      currentLesson = lessonKey;
-      currentQuestionIndex = 0;
+      currentQuestion = 0;
       score = 0;
-      showPage("quiz-page");
+      errorMsg.textContent = "";
+      showPage("quiz");
       loadQuestion();
     })
-    .catch(() => alert("Lesson JSON file not found."));
+    .catch(() => {
+      errorMsg.textContent = "Could not load quiz. Check file name or structure.";
+    });
 }
 
+// Load individual question
 function loadQuestion() {
-  const q = quizData[currentQuestionIndex];
-  document.getElementById("question").textContent = `Q${currentQuestionIndex + 1}: ${q.question}`;
-  const optionsDiv = document.getElementById("options");
-  optionsDiv.innerHTML = "";
+  const q = quizData[currentQuestion];
+  questionEl.textContent = `Q${currentQuestion + 1}: ${q.question}`;
+  optionsEl.innerHTML = "";
 
   if (q.type === "mcq") {
-    q.options.forEach((opt, i) => {
-      const label = document.createElement("label");
-      label.innerHTML = `<input type="radio" name="option" value="${opt}" /> ${opt}`;
-      optionsDiv.appendChild(label);
+    q.options.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.textContent = opt;
+      btn.className = "btn option";
+      btn.onclick = () => {
+        if (opt.trim().toLowerCase() === q.answer.trim().toLowerCase()) score++;
+        nextQuestion();
+      };
+      optionsEl.appendChild(btn);
     });
-  } else {
+  } else if (q.type === "short" || q.type === "blank") {
     const input = document.createElement("input");
     input.type = "text";
-    input.id = "answer-input";
     input.placeholder = "Type your answer...";
-    optionsDiv.appendChild(input);
-  }
+    input.className = "code-input";
+    optionsEl.appendChild(input);
 
-  document.getElementById("next-btn").onclick = nextQuestion;
+    const submitBtn = document.createElement("button");
+    submitBtn.textContent = "Submit";
+    submitBtn.className = "btn";
+    submitBtn.onclick = () => {
+      const userAns = input.value.trim().toLowerCase();
+      if (userAns === q.answer.trim().toLowerCase()) score++;
+      nextQuestion();
+    };
+    optionsEl.appendChild(submitBtn);
+  } else if (q.type === "truefalse") {
+    ["True", "False"].forEach(opt => {
+      const btn = document.createElement("button");
+      btn.textContent = opt;
+      btn.className = "btn option";
+      btn.onclick = () => {
+        if (opt.toLowerCase() === q.answer.toLowerCase()) score++;
+        nextQuestion();
+      };
+      optionsEl.appendChild(btn);
+    });
+  }
 }
 
+// Go to next question or finish
 function nextQuestion() {
-  const q = quizData[currentQuestionIndex];
-  let userAnswer = "";
-
-  if (q.type === "mcq") {
-    const selected = document.querySelector('input[name="option"]:checked');
-    if (!selected) {
-      alert("Please select an option.");
-      return;
-    }
-    userAnswer = selected.value;
-  } else {
-    userAnswer = document.getElementById("answer-input").value.trim();
-    if (!userAnswer) {
-      alert("Please enter an answer.");
-      return;
-    }
-  }
-
-  if (userAnswer.toLowerCase() === q.answer.toLowerCase()) {
-    score++;
-  }
-
-  currentQuestionIndex++;
-  if (currentQuestionIndex < quizData.length) {
+  currentQuestion++;
+  if (currentQuestion < quizData.length) {
     loadQuestion();
   } else {
-    showScore();
+    finishQuiz();
   }
 }
 
-function showScore() {
-  document.getElementById("score").textContent = `${score} / ${quizData.length}`;
-  showPage("score-page");
+// Finish and show score
+function finishQuiz() {
+  scoreEl.textContent = `${score} / ${quizData.length}`;
   localStorage.setItem(currentLesson, "done");
+  showPage("score");
 }
 
-function submitRetakeCode() {
-  const retakeCode = document.getElementById("retake-code").value.trim();
-  const valid = Object.entries(lessonCodes).find(
-    ([key, val]) => val.retake === retakeCode
-  );
-  if (valid) {
-    localStorage.removeItem(valid[0]);
-    alert("You can now retake the quiz.");
-    showPage("code-page");
-  } else {
-    alert("Invalid retake code.");
-  }
-}
+// Retake logic
+document.getElementById("retake-quiz-btn").addEventListener("click", () => {
+  document.getElementById("code-input").value = "";
+  errorMsg.textContent = "";
+  showPage("code");
+});
 
-function resetToCodePage() {
-  showPage("code-page");
-}
-
+// Initial setup
 window.onload = () => {
-  showPage("code-page");
+  showPage("code");
+  document.getElementById("start-quiz-btn")?.addEventListener("click", () => showPage("code"));
+  document.getElementById("submit-code-btn").addEventListener("click", loadQuiz);
 };
