@@ -37,7 +37,7 @@ document.getElementById("submit-code-btn").addEventListener("click", () => {
   const error = document.getElementById("error-message");
   error.textContent = "";
 
-  const lessonKey = Object.keys(lessonCodes).find(key => 
+  const lessonKey = Object.keys(lessonCodes).find(key =>
     code === lessonCodes[key].take || code === lessonCodes[key].retake
   );
 
@@ -57,12 +57,13 @@ document.getElementById("submit-code-btn").addEventListener("click", () => {
 });
 
 document.getElementById("next-btn").addEventListener("click", () => {
-  checkAnswer();
-  currentQuestion++;
+  checkAnswer(); // Check the answer for the current question
+  currentQuestion++; // Move to the next question
+
   if (currentQuestion < quizData.length) {
-    showQuestion();
+    showQuestion(); // Display the next question
   } else {
-    showScore();
+    showScore(); // If all questions are answered, show the score
   }
 });
 
@@ -128,12 +129,14 @@ function checkAnswer() {
   const q = quizData[currentQuestion];
   let userAnswer = "";
 
-  if (q.type === "mcq" || q.type === "truefalse") {
-    const selected = document.querySelector('input[name="option"]:checked');
-    if (selected) userAnswer = selected.value.trim().toLowerCase();
+  const selectedOption = document.querySelector('input[name="option"]:checked');
+  if (selectedOption) {
+    userAnswer = selectedOption.value.trim().toLowerCase();
   } else {
-    const input = document.querySelector('input[name="option"]');
-    if (input) userAnswer = input.value.trim().toLowerCase();
+    const textInput = document.querySelector('input[name="option"]');
+    if (textInput) {
+      userAnswer = textInput.value.trim().toLowerCase();
+    }
   }
 
   if (userAnswer === q.answer.toLowerCase()) {
