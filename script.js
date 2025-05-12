@@ -27,28 +27,36 @@ const welcomePage = document.getElementById("welcome-page");
 const codePage = document.getElementById("code-page");
 const quizPage = document.getElementById("quiz-page");
 const scorePage = document.getElementById("score-page");
+const questionElement = document.getElementById("question");
+const optionsElement = document.getElementById("options");
+const nextButton = document.getElementById("next-btn");
+const scoreElement = document.getElementById("score");
+const codeInputElement = document.getElementById("code-input");
+const submitCodeButton = document.getElementById("submit-code-btn");
+const retakeQuizButton = document.getElementById("retake-quiz-btn");
+const errorMessageElement = document.getElementById("error-message");
+const startQuizButton = document.getElementById("start-quiz-btn");
 
-document.getElementById("start-quiz-btn").addEventListener("click", () => {
+startQuizButton.addEventListener("click", () => {
   showPage("code");
 });
 
-document.getElementById("submit-code-btn").addEventListener("click", () => {
-  const code = document.getElementById("code-input").value.trim().toUpperCase();
-  const error = document.getElementById("error-message");
-  error.textContent = "";
+submitCodeButton.addEventListener("click", () => {
+  const code = codeInputElement.value.trim().toUpperCase();
+  errorMessageElement.textContent = "";
 
   const lessonKey = Object.keys(lessonCodes).find(key =>
     code === lessonCodes[key].take || code === lessonCodes[key].retake
   );
 
   if (!lessonKey) {
-    error.textContent = "Invalid code.";
+    errorMessageElement.textContent = "Invalid code.";
     return;
   }
 
   const saved = localStorage.getItem(lessonKey);
   if (saved === "done" && code !== lessonCodes[lessonKey].retake) {
-    error.textContent = "Retake code required.";
+    errorMessageElement.textContent = "Retake code required.";
     return;
   }
 
@@ -56,9 +64,12 @@ document.getElementById("submit-code-btn").addEventListener("click", () => {
   loadQuiz(lessonKey, code);
 });
 
-document.getElementById("next-btn").addEventListener("click", () => {
+nextButton.addEventListener("click", () => {
+  console.log("--- Next Button Clicked ---"); // Debugging
   checkAnswer();
+  console.log("Current Question (before increment):", currentQuestion);
   currentQuestion++;
+  console.log("Current Question (after increment):", currentQuestion);
 
   if (currentQuestion < quizData.length) {
     showQuestion();
@@ -67,8 +78,8 @@ document.getElementById("next-btn").addEventListener("click", () => {
   }
 });
 
-document.getElementById("retake-quiz-btn").addEventListener("click", () => {
-  document.getElementById("code-input").value = "";
+retakeQuizButton.addEventListener("click", () => {
+  codeInputElement.value = "";
   showPage("code");
 });
 
@@ -93,41 +104,49 @@ function loadQuiz(lessonKey, code) {
       showPage("quiz");
       showQuestion();
     })
-    .catch(() => {
+    .catch((error) => {
+      console.error("Error loading quiz:", error); // Log the error
       alert("Error loading quiz data.");
     });
 }
 
 function showQuestion() {
+  if (!quizData || quizData.length === 0 || currentQuestion >= quizData.length) {
+    console.error("Invalid quiz data or question index");
+    return; // Or handle this more gracefully (e.g., show an error message)
+  }
+
   const q = quizData[currentQuestion];
-  document.getElementById("question").textContent = `Q${currentQuestion + 1}: ${q.question}`;
-  const optionsDiv = document.getElementById("options");
-  optionsDiv.innerHTML = "";
+  questionElement.textContent = `Q${currentQuestion + 1}: ${q.question}`;
+  optionsElement.innerHTML = "";
 
   if (q.type === "mcq") {
     q.options.forEach(opt => {
       const label = document.createElement("label");
-      //  *** CRUCIAL CHANGE:  SAME NAME ATTRIBUTE  ***
       label.innerHTML = `<input type="radio" name="quiz-option" value="${opt}"> ${opt}`;
-      optionsDiv.appendChild(label);
+      optionsElement.appendChild(label);
     });
   } else if (q.type === "truefalse") {
     ["True", "False"].forEach(opt => {
       const label = document.createElement("label");
-      //  *** CRUCIAL CHANGE:  SAME NAME ATTRIBUTE  ***
       label.innerHTML = `<input type="radio" name="quiz-option" value="${opt.toLowerCase()}"> ${opt}`;
-      optionsDiv.appendChild(label);
+      optionsElement.appendChild(label);
     });
   } else {
     const input = document.createElement("input");
     input.type = "text";
-    input.name = "quiz-option"; //  Keep a consistent name here too, for simplicity
+    input.name = "quiz-option";
     input.placeholder = "Type your answer...";
-    optionsDiv.appendChild(input);
+    optionsElement.appendChild(input);
   }
 }
 
 function checkAnswer() {
+  if (!quizData || quizData.length === 0 || currentQuestion >= quizData.length) {
+    console.error("Invalid quiz data or question index in checkAnswer");
+    return;
+  }
+
   const q = quizData[currentQuestion];
   let userAnswer = "";
 
@@ -141,13 +160,17 @@ function checkAnswer() {
     }
   }
 
+  console.log("User Answer:", userAnswer);
+  console.log("Correct Answer:", q.answer.toLowerCase());
+
   if (userAnswer === q.answer.toLowerCase()) {
     score++;
+    console.log("Score:", score);
   }
 }
 
 function showScore() {
   localStorage.setItem(currentLesson, "done");
-  document.getElementById("score").textContent = `${score} / ${quizData.length}`;
+  scoreElement.textContent = `${score} / ${quizData.length}`;
   showPage("score");
 }
