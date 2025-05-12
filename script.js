@@ -84,6 +84,7 @@ function loadQuiz() {
   if (savedCode === "done") {
     if (code === lessonCodes[lessonNum].retake) {
       alert("You can now retake the quiz.");
+      fetchQuizData(lessonNum);  // Load quiz data again for retake
     } else {
       alert("You need the correct retake code to retake the quiz.");
       return;
@@ -157,9 +158,35 @@ function displayQuiz() {
   const submitBtn = document.createElement("button");
   submitBtn.textContent = "Submit Quiz";
   submitBtn.onclick = () => {
+    const score = calculateScore();
     localStorage.setItem(currentLesson, "done");
-    alert("Quiz submitted! Thanks.");
+    alert(`Quiz submitted! Your score is: ${score}/${quizData.length}`);
   };
   container.appendChild(submitBtn);
   container.classList.remove("hidden");
+}
+
+// Function to calculate score based on answers
+function calculateScore() {
+  let score = 0;
+
+  quizData.forEach((q, index) => {
+    const userAnswer = document.querySelector(`input[name="q${index}"]:checked`);
+    const userInput = document.querySelector(`input[name="q${index}"]`).value.trim().toLowerCase();
+
+    // Check for multiple choice and true/false questions
+    if (q.type === "mcq" && userAnswer && parseInt(userAnswer.value) === q.answer) {
+      score++;
+    } 
+    // Check for blank and short answer questions
+    else if ((q.type === "blank" || q.type === "short") && userInput === q.answer.toLowerCase()) {
+      score++;
+    }
+    // Check for true/false questions
+    else if (q.type === "truefalse" && userAnswer && userAnswer.value === String(q.answer)) {
+      score++;
+    }
+  });
+
+  return score;
 }
