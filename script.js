@@ -161,6 +161,8 @@ function displayQuiz() {
     const score = calculateScore();
     localStorage.setItem(currentLesson, "done");
     alert(`Quiz submitted! Your score is: ${score}/${quizData.length}`);
+    // Disable quiz after submission
+    submitBtn.disabled = true;
   };
   container.appendChild(submitBtn);
   container.classList.remove("hidden");
