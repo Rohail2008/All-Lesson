@@ -57,13 +57,13 @@ document.getElementById("submit-code-btn").addEventListener("click", () => {
 });
 
 document.getElementById("next-btn").addEventListener("click", () => {
-  checkAnswer(); // Check the answer for the current question
-  currentQuestion++; // Move to the next question
+  checkAnswer();
+  currentQuestion++;
 
   if (currentQuestion < quizData.length) {
-    showQuestion(); // Display the next question
+    showQuestion();
   } else {
-    showScore(); // If all questions are answered, show the score
+    showScore();
   }
 });
 
@@ -107,19 +107,21 @@ function showQuestion() {
   if (q.type === "mcq") {
     q.options.forEach(opt => {
       const label = document.createElement("label");
-      label.innerHTML = `<input type="radio" name="option" value="${opt}"> ${opt}`;
+      //  *** CRUCIAL CHANGE:  SAME NAME ATTRIBUTE  ***
+      label.innerHTML = `<input type="radio" name="quiz-option" value="${opt}"> ${opt}`;
       optionsDiv.appendChild(label);
     });
   } else if (q.type === "truefalse") {
     ["True", "False"].forEach(opt => {
       const label = document.createElement("label");
-      label.innerHTML = `<input type="radio" name="option" value="${opt.toLowerCase()}"> ${opt}`;
+      //  *** CRUCIAL CHANGE:  SAME NAME ATTRIBUTE  ***
+      label.innerHTML = `<input type="radio" name="quiz-option" value="${opt.toLowerCase()}"> ${opt}`;
       optionsDiv.appendChild(label);
     });
   } else {
     const input = document.createElement("input");
     input.type = "text";
-    input.name = "option";
+    input.name = "quiz-option"; //  Keep a consistent name here too, for simplicity
     input.placeholder = "Type your answer...";
     optionsDiv.appendChild(input);
   }
@@ -129,11 +131,11 @@ function checkAnswer() {
   const q = quizData[currentQuestion];
   let userAnswer = "";
 
-  const selectedOption = document.querySelector('input[name="option"]:checked');
+  const selectedOption = document.querySelector('input[name="quiz-option"]:checked');
   if (selectedOption) {
     userAnswer = selectedOption.value.trim().toLowerCase();
   } else {
-    const textInput = document.querySelector('input[name="option"]');
+    const textInput = document.querySelector('input[name="quiz-option"]');
     if (textInput) {
       userAnswer = textInput.value.trim().toLowerCase();
     }
