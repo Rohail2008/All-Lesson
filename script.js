@@ -1,7 +1,7 @@
 let quizData = [];
-let currentQuestion = 0;
+let currentQuestionIndex = 0;
 let score = 0;
-let currentLesson = "";
+let currentLessonKey = "";
 
 const lessonCodes = {
     "L1": { take: "L1TAKE", retake: "L1RETAKE" },
@@ -30,7 +30,7 @@ const scorePage = document.getElementById("score-page");
 const questionElement = document.getElementById("question");
 const optionsElement = document.getElementById("options");
 const nextButton = document.getElementById("next-btn");
-const scoreElement = document.getElementById("score");
+const scoreDisplayElement = document.getElementById("score");
 const codeInputElement = document.getElementById("code-input");
 const submitCodeButton = document.getElementById("submit-code-btn");
 const retakeQuizButton = document.getElementById("retake-quiz-btn");
@@ -67,7 +67,7 @@ function showPage(name) {
 // --- Quiz Logic Functions ---
 
 function loadQuiz(lessonKey, code) {
-    fetch(`lesson${lessonKey.slice(1)}.json`)
+    fetch(`${lessonKey}.json`)
         .then(res => res.json())
         .then(data => {
             if (data.code !== code) {
@@ -75,6 +75,8 @@ function loadQuiz(lessonKey, code) {
                 return;
             }
             quizData = data.questions;
+            currentQuestionIndex = 0;
+            score = 0;
             resetQuizState();
             showPage("quiz");
             showQuestion();
@@ -88,18 +90,29 @@ function loadQuiz(lessonKey, code) {
 function showQuestion() {
     if (!isValidQuestionState()) return;
 
-    const q = quizData[currentQuestion];
-    questionElement.textContent = `Q${currentQuestion + 1}: ${q.question}`;
+    const q = quizData[currentQuestionIndex];
+    questionElement.textContent = `Q${currentQuestionIndex + 1}: ${q.question}`;
     optionsElement.innerHTML = "";
-    nextButton.disabled = false; // Enable next button by default
+    nextButton.disabled = true; // Disable until an option is selected or input is given
 
     if (q.type === "mcq") {
         displayMCQOptions(q.options);
+        const radioButtons = optionsElement.querySelectorAll('input[type="radio"]');
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', () => {
+                nextButton.disabled = false;
+            });
+        });
     } else if (q.type === "truefalse") {
         displayTrueFalseOptions();
+        const radioButtons = optionsElement.querySelectorAll('input[type="radio"]');
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', () => {
+                nextButton.disabled = false;
+            });
+        });
     } else if (q.type === "short" || q.type === "blank") {
         displayTextInput();
-        nextButton.disabled = true; // Disable until input is given
         const answerInput = optionsElement.querySelector('input[name="quiz-option"]');
         if (answerInput) {
             answerInput.addEventListener('input', () => {
@@ -112,7 +125,7 @@ function showQuestion() {
 function checkAnswer() {
     if (!isValidQuestionState()) return;
 
-    const q = quizData[currentQuestion];
+    const q = quizData[currentQuestionIndex];
     const userAnswer = getUserAnswer();
     const correctAnswer = getCorrectAnswer(q);
     let isCorrect = false;
@@ -133,6 +146,7 @@ function checkAnswer() {
     }
 
     provideFeedback(isCorrect, q.correctAnswer); // Use q.correctAnswer for display
+    nextButton.disabled = false; // Enable next button after answering
 }
 
 function provideFeedback(isCorrect, correctAnswer) {
@@ -147,15 +161,15 @@ function provideFeedback(isCorrect, correctAnswer) {
 
 
 function showScore() {
-    localStorage.setItem(currentLesson, "done");
-    scoreElement.textContent = `${score} / ${quizData.length}`;
+    localStorage.setItem(currentLessonKey, "done");
+    scoreDisplayElement.textContent = `${score} / ${quizData.length}`;
     showPage("score");
 }
 
 // --- Helper/Utility Functions ---
 
 function isValidQuestionState() {
-    if (!quizData || quizData.length === 0 || currentQuestion >= quizData.length) {
+    if (!quizData || quizData.length === 0 || currentQuestionIndex >= quizData.length) {
         console.error("Invalid quiz data or question index");
         return false;
     }
@@ -163,8 +177,9 @@ function isValidQuestionState() {
 }
 
 function resetQuizState() {
-    currentQuestion = 0;
+    currentQuestionIndex = 0;
     score = 0;
+    questionElement.innerHTML = ""; // Clear previous question and feedback
 }
 
 function getUserAnswer() {
@@ -235,22 +250,23 @@ function submitCode() {
         return;
     }
 
-    currentLesson = lessonKey;
+    currentLessonKey = lessonKey;
     loadQuiz(lessonKey, code);
 }
 
 function nextQuestion() {
     console.log("--- Next Button Clicked ---");
     checkAnswer();
-    console.log("Current Question (before increment):", currentQuestion);
-    currentQuestion++;
-    console.log("Current Question (after increment):", currentQuestion);
+    nextButton.disabled = true; // Disable next button until the next question is displayed
 
-    if (currentQuestion < quizData.length) {
-        showQuestion();
-    } else {
-        showScore();
-    }
+    setTimeout(() => {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < quizData.length) {
+            showQuestion();
+        } else {
+            showScore();
+        }
+    }, 500); // Small delay to show feedback
 }
 
 function retakeQuiz() {
