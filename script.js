@@ -12,7 +12,7 @@ const lessonCodes = {
     "L6": { take: "L6TAKE", retake: "L6RETAKE" },
     "L7": { take: "L7TAKE", retake: "L7RETAKE" },
     "L8": { take: "L8TAKE", retake: "L8RETAKE" },
-    "L9": { take: "L9TAKE", retake: "L9RETAKE" },
+    "L9": { take: "L9RETAKE", retake: "L9RETAKE" },
     "L10": { take: "L10TAKE", retake: "L10RETAKE" },
     "L11": { take: "L11TAKE", retake: "L11RETAKE" },
     "L12": { take: "L12TAKE", retake: "L12RETAKE" },
@@ -36,6 +36,7 @@ const submitCodeButton = document.getElementById("submit-code-btn");
 const retakeQuizButton = document.getElementById("retake-quiz-btn");
 const errorMessageElement = document.getElementById("error-message");
 const startQuizButton = document.getElementById("start-quiz-btn");
+const quizContainer = document.getElementById("quiz-container");
 
 // --- Event Listeners ---
 
@@ -58,10 +59,13 @@ retakeQuizButton.addEventListener("click", () => {
 // --- Page Navigation Functions ---
 
 function showPage(name) {
-    welcomePage.style.display = name === "welcome" ? "block" : "none";
-    codePage.style.display = name === "code" ? "block" : "none";
-    quizPage.style.display = name === "quiz" ? "block" : "none";
-    scorePage.style.display = name === "score" ? "block" : "none";
+    const pages = document.querySelectorAll('.page');
+    pages.forEach(page => page.classList.add('hidden'));
+
+    const targetPage = document.getElementById(name + "-page");
+    if (targetPage) {
+        targetPage.classList.remove('hidden');
+    }
 }
 
 // --- Quiz Logic Functions ---
@@ -132,17 +136,24 @@ function checkAnswer() {
         console.log("Score:", score);
     }
 
-    provideFeedback(isCorrect, q.correctAnswer); // Use q.correctAnswer for display
+    provideFeedback(isCorrect, correctAnswer); // Provide feedback to the user
 }
 
 function provideFeedback(isCorrect, correctAnswer) {
-    let feedback = "";
-    if (isCorrect) {
-        feedback = "<span style='color: green;'>Correct!</span>";
-    } else {
-        feedback = `<span style='color: red;'>Incorrect.</span> The correct answer is: ${correctAnswer}`;
+    let feedbackElement = document.querySelector('.feedback');
+    if (!feedbackElement) {
+        feedbackElement = document.createElement('div');
+        feedbackElement.classList.add('feedback');
+        questionElement.parentNode.insertBefore(feedbackElement, questionElement.nextSibling);
     }
-    questionElement.innerHTML += `<br>${feedback}`; // Append feedback to question
+
+    if (isCorrect) {
+        feedbackElement.textContent = "Correct!";
+        feedbackElement.className = 'feedback correct';
+    } else {
+        feedbackElement.textContent = `Incorrect. The correct answer is: ${correctAnswer}`;
+        feedbackElement.className = 'feedback incorrect';
+    }
 }
 
 
@@ -195,6 +206,13 @@ function displayMCQOptions(options) {
         const label = document.createElement("label");
         label.innerHTML = `<input type="radio" name="quiz-option" value="${opt.toLowerCase()}" id="option${index}"> ${opt}`;
         optionsElement.appendChild(label);
+
+        label.addEventListener('click', () => {
+            // Remove active class from all labels
+            document.querySelectorAll('.options label').forEach(lbl => lbl.classList.remove('active'));
+            // Add active class to the clicked label
+            label.classList.add('active');
+        });
     });
 }
 
@@ -203,6 +221,13 @@ function displayTrueFalseOptions() {
         const label = document.createElement("label");
         label.innerHTML = `<input type="radio" name="quiz-option" value="${opt.toLowerCase()}"> ${opt}`;
         optionsElement.appendChild(label);
+
+        label.addEventListener('click', () => {
+            // Remove active class from all labels
+            document.querySelectorAll('.options label').forEach(lbl => lbl.classList.remove('active'));
+            // Add active class to the clicked label
+            label.classList.add('active');
+        });
     });
 }
 
