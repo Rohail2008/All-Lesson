@@ -157,15 +157,17 @@ function displayQuiz() {
   // Submit Button
   const submitBtn = document.createElement("button");
   submitBtn.textContent = "Submit Quiz";
-  submitBtn.onclick = () => {
-    const score = calculateScore();
-    localStorage.setItem(currentLesson, "done");
-    alert(`Quiz submitted! Your score is: ${score}/${quizData.length}`);
-    // Disable quiz after submission
-    submitBtn.disabled = true;
-  };
+  submitBtn.onclick = submitQuiz; // Bind the submit function
   container.appendChild(submitBtn);
   container.classList.remove("hidden");
+}
+
+// Function to submit the quiz and show the score
+function submitQuiz() {
+  const score = calculateScore();
+  localStorage.setItem(currentLesson, "done");
+  alert(`Quiz submitted! Your score is: ${score}/${quizData.length}`);
+  document.querySelector('button').disabled = true;  // Disable button after submission
 }
 
 // Function to calculate score based on answers
