@@ -91,13 +91,21 @@ function showQuestion() {
   const q = quizData[currentQuestion];
   questionElement.textContent = `Q${currentQuestion + 1}: ${q.question}`;
   optionsElement.innerHTML = "";
+  nextButton.disabled = false; // Enable next button by default for new questions
 
   if (q.type === "mcq") {
     displayMCQOptions(q.options);
   } else if (q.type === "truefalse") {
     displayTrueFalseOptions();
-  } else {
+  } else if (q.type === "shortanswer" || q.type === "fillblank") {
     displayTextInput();
+    nextButton.disabled = true; // Disable next button until an answer is provided
+    const answerInput = optionsElement.querySelector('input[name="quiz-option"]');
+    if (answerInput) {
+      answerInput.addEventListener('input', () => {
+        nextButton.disabled = answerInput.value.trim() === "";
+      });
+    }
   }
 }
 
@@ -145,7 +153,7 @@ function getUserAnswer() {
   } else {
     const textInput = document.querySelector('input[name="quiz-option"]');
     if (textInput) {
-      return textInput.value.trim().toLowerCase();
+      return textInput ? textInput.value.trim().toLowerCase() : "";
     }
   }
   return ""; // Return an empty string if no answer is selected
@@ -226,3 +234,6 @@ function retakeQuiz() {
   codeInputElement.value = "";
   showPage("code");
 }
+
+// --- Initial Page Load ---
+showPage("welcome");
