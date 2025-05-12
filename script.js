@@ -37,11 +37,155 @@ const retakeQuizButton = document.getElementById("retake-quiz-btn");
 const errorMessageElement = document.getElementById("error-message");
 const startQuizButton = document.getElementById("start-quiz-btn");
 
+// --- Event Listeners ---
+
 startQuizButton.addEventListener("click", () => {
   showPage("code");
 });
 
 submitCodeButton.addEventListener("click", () => {
+  submitCode();
+});
+
+nextButton.addEventListener("click", () => {
+  nextQuestion();
+});
+
+retakeQuizButton.addEventListener("click", () => {
+  retakeQuiz();
+});
+
+// --- Page Navigation Functions ---
+
+function showPage(name) {
+  welcomePage.style.display = name === "welcome" ? "block" : "none";
+  codePage.style.display = name === "code" ? "block" : "none";
+  quizPage.style.display = name === "quiz" ? "block" : "none";
+  scorePage.style.display = name === "score" ? "block" : "none";
+}
+
+// --- Quiz Logic Functions ---
+
+function loadQuiz(lessonKey, code) {
+  fetch(`lesson${lessonKey.slice(1)}.json`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.code !== code) {
+        alert("Code does not match lesson file.");
+        return;
+      }
+      quizData = data.questions;
+      resetQuizState();
+      showPage("quiz");
+      showQuestion();
+    })
+    .catch((error) => {
+      console.error("Error loading quiz:", error);
+      alert("Error loading quiz data.");
+    });
+}
+
+function showQuestion() {
+  if (!isValidQuestionState()) return;
+
+  const q = quizData[currentQuestion];
+  questionElement.textContent = `Q${currentQuestion + 1}: ${q.question}`;
+  optionsElement.innerHTML = "";
+
+  if (q.type === "mcq") {
+    displayMCQOptions(q.options);
+  } else if (q.type === "truefalse") {
+    displayTrueFalseOptions();
+  } else {
+    displayTextInput();
+  }
+}
+
+function checkAnswer() {
+  if (!isValidQuestionState()) return;
+
+  const q = quizData[currentQuestion];
+  const userAnswer = getUserAnswer();
+  const correctAnswer = getCorrectAnswer(q);
+
+  console.log("User Answer:", userAnswer);
+  console.log("Correct Answer:", correctAnswer);
+
+  if (userAnswer === correctAnswer) {
+    score++;
+    console.log("Score:", score);
+  }
+}
+
+function showScore() {
+  localStorage.setItem(currentLesson, "done");
+  scoreElement.textContent = `${score} / ${quizData.length}`;
+  showPage("score");
+}
+
+// --- Helper/Utility Functions ---
+
+function isValidQuestionState() {
+  if (!quizData || quizData.length === 0 || currentQuestion >= quizData.length) {
+    console.error("Invalid quiz data or question index");
+    return false;
+  }
+  return true;
+}
+
+function resetQuizState() {
+  currentQuestion = 0;
+  score = 0;
+}
+
+function getUserAnswer() {
+  const selectedOption = document.querySelector('input[name="quiz-option"]:checked');
+  if (selectedOption) {
+    return selectedOption.value.trim().toLowerCase();
+  } else {
+    const textInput = document.querySelector('input[name="quiz-option"]');
+    if (textInput) {
+      return textInput.value.trim().toLowerCase();
+    }
+  }
+  return ""; // Return an empty string if no answer is selected
+}
+
+function getCorrectAnswer(question) {
+  if (question.type === "mcq") {
+    return question.options[question.answer].toLowerCase();
+  } else {
+    return question.answer.toLowerCase();
+  }
+}
+
+function displayMCQOptions(options) {
+  options.forEach(opt => {
+    const label = document.createElement("label");
+    label.innerHTML = `<input type="radio" name="quiz-option" value="${opt}"> ${opt}`;
+    optionsElement.appendChild(label);
+  });
+}
+
+function displayTrueFalseOptions() {
+  ["True", "False"].forEach(opt => {
+    const label = document.createElement("label");
+    label.innerHTML = `<input type="radio" name="quiz-option" value="${opt.toLowerCase()}"> ${opt}`;
+    optionsElement.appendChild(label);
+  });
+}
+
+function displayTextInput() {
+  const input = document.createElement("input");
+  input.type = "text";
+  input.name = "quiz-option";
+  input.placeholder = "Type your answer...";
+  optionsElement.appendChild(input);
+}
+
+// --- User Interaction Handlers ---
+
+function submitCode() {
   const code = codeInputElement.value.trim().toUpperCase();
   errorMessageElement.textContent = "";
 
@@ -62,10 +206,10 @@ submitCodeButton.addEventListener("click", () => {
 
   currentLesson = lessonKey;
   loadQuiz(lessonKey, code);
-});
+}
 
-nextButton.addEventListener("click", () => {
-  console.log("--- Next Button Clicked ---"); // Debugging
+function nextQuestion() {
+  console.log("--- Next Button Clicked ---");
   checkAnswer();
   console.log("Current Question (before increment):", currentQuestion);
   currentQuestion++;
@@ -76,101 +220,9 @@ nextButton.addEventListener("click", () => {
   } else {
     showScore();
   }
-});
+}
 
-retakeQuizButton.addEventListener("click", () => {
+function retakeQuiz() {
   codeInputElement.value = "";
   showPage("code");
-});
-
-function showPage(name) {
-  welcomePage.style.display = name === "welcome" ? "block" : "none";
-  codePage.style.display = name === "code" ? "block" : "none";
-  quizPage.style.display = name === "quiz" ? "block" : "none";
-  scorePage.style.display = name === "score" ? "block" : "none";
-}
-
-function loadQuiz(lessonKey, code) {
-  fetch(`lesson${lessonKey.slice(1)}.json`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.code !== code) {
-        alert("Code does not match lesson file.");
-        return;
-      }
-      quizData = data.questions;
-      currentQuestion = 0;
-      score = 0;
-      showPage("quiz");
-      showQuestion();
-    })
-    .catch((error) => {
-      console.error("Error loading quiz:", error); // Log the error
-      alert("Error loading quiz data.");
-    });
-}
-
-function showQuestion() {
-  if (!quizData || quizData.length === 0 || currentQuestion >= quizData.length) {
-    console.error("Invalid quiz data or question index");
-    return; // Or handle this more gracefully (e.g., show an error message)
-  }
-
-  const q = quizData[currentQuestion];
-  questionElement.textContent = `Q${currentQuestion + 1}: ${q.question}`;
-  optionsElement.innerHTML = "";
-
-  if (q.type === "mcq") {
-    q.options.forEach(opt => {
-      const label = document.createElement("label");
-      label.innerHTML = `<input type="radio" name="quiz-option" value="${opt}"> ${opt}`;
-      optionsElement.appendChild(label);
-    });
-  } else if (q.type === "truefalse") {
-    ["True", "False"].forEach(opt => {
-      const label = document.createElement("label");
-      label.innerHTML = `<input type="radio" name="quiz-option" value="${opt.toLowerCase()}"> ${opt}`;
-      optionsElement.appendChild(label);
-    });
-  } else {
-    const input = document.createElement("input");
-    input.type = "text";
-    input.name = "quiz-option";
-    input.placeholder = "Type your answer...";
-    optionsElement.appendChild(input);
-  }
-}
-
-function checkAnswer() {
-  if (!quizData || quizData.length === 0 || currentQuestion >= quizData.length) {
-    console.error("Invalid quiz data or question index in checkAnswer");
-    return;
-  }
-
-  const q = quizData[currentQuestion];
-  let userAnswer = "";
-
-  const selectedOption = document.querySelector('input[name="quiz-option"]:checked');
-  if (selectedOption) {
-    userAnswer = selectedOption.value.trim().toLowerCase();
-  } else {
-    const textInput = document.querySelector('input[name="quiz-option"]');
-    if (textInput) {
-      userAnswer = textInput.value.trim().toLowerCase();
-    }
-  }
-
-  console.log("User Answer:", userAnswer);
-  console.log("Correct Answer:", q.answer.toLowerCase());
-
-  if (userAnswer === q.answer.toLowerCase()) {
-    score++;
-    console.log("Score:", score);
-  }
-}
-
-function showScore() {
-  localStorage.setItem(currentLesson, "done");
-  scoreElement.textContent = `${score} / ${quizData.length}`;
-  showPage("score");
 }
