@@ -102,8 +102,9 @@ function fetchQuizData(lessonNum) {
   fetch(`lessons/lesson${lessonNum.slice(1)}.json`)
     .then(res => res.json())
     .then(data => {
-      if (data.code !== lessonCodes[lessonNum].take) {
-        alert("Incorrect code for this lesson.");
+      // Check if the JSON file contains a 'code' property and verify the code against it
+      if (!data.code || data.code !== lessonCodes[lessonNum].take) {
+        alert("Incorrect take code for this lesson.");
         return;
       }
       quizData = data.questions;
